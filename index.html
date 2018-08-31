@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<meta charset="UTF-8"> 
+<html>
+  <head>
+    <style>
+      #stages td {
+        width:  143px;
+        height: 154px;
+        background-repeat: no-repeat;
+      }
+      #x {
+        visibility: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <table id="stages">
+      <tr>
+        <td id="bubbleman" background="bubbleman.png" alt="Bubble Man"><img id="x" src="x.png"></td>
+        <td id="airman"    background="airman.png"    alt="Air Man"><img id="x" src="x.png"></td>
+        <td id="quickman"  background="quickman.png"  alt="Quick Man"><img id="x" src="x.png"></td>
+      </tr>
+      <tr>
+        <td id="heatman" background="heatman.png" alt="Heat Man"><img id="x" src="x.png"></td>
+        <td id="wily"    background="wily.png"    alt="Dr. Wily"></td>
+        <td id="woodman" background="woodman.png" alt="Wood Man"><img id="x" src="x.png"></td>
+      </tr>
+      <tr>
+        <td id="metalman" background="metalman.png" alt="Metal Man"><img id="x" src="x.png"></td>
+        <td id="flashman" background="flashman.png" alt="Flash Man"><img id="x" src="x.png"></td>
+        <td id="crashman" background="crashman.png" alt="Crash Man"><img id="x" src="x.png"></td>
+      </tr>
+
+    <script>
+      var stagesTable = document.getElementById("stages");
+      if (stagesTable != null) {
+        for (var i = 0; i < stagesTable.rows.length; i++){
+          var row = stagesTable.rows[i];
+          for(var j = 0; j < row.cells.length; j++){
+            var cell = row.cells[j];
+            cell.onclick = function () {
+              stageClicked(this);
+            }
+          }
+        }
+      }
+      function stageClicked(stageCell) {
+        for(var i = 0; i < stageCell.childNodes.length; i++){
+          var child = stageCell.childNodes[i];
+          if (child.id == "x"){
+            //child.style.visibility = 'visible';
+            toggle(child);
+          }
+        }
+      }
+      function toggle(thing) {
+        if(thing.style.visibility == 'hidden' ||
+           thing.style.visibility == null     ||
+           thing.style.visibility == "")
+          thing.style.visibility = 'visible';
+        else if(thing.style.visibility == 'visible')
+          thing.style.visibility = 'hidden';
+        else alert("'" + thing.style.visibility + "'");
+      }
+    </script>
+  </body>
+</html>
