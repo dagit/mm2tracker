@@ -3,32 +3,48 @@
   <head>
     <meta charset="UTF-8">
     <style>
+      table {
+        border: 0;
+        border-collapse: collapse;
+        border-spacing: 0;
+      }
       #stages td {
-        width:  130px;
-        height: 150px;
+        /*
+        width:  37px;
+        height: 40px;
+        */ 
         background-repeat: no-repeat;
+        margin: 0;
+        padding: 0;
       }
       #x {
         visibility: hidden;
+        display: block;
       }
     </style>
   </head>
-  <body>
-    <table id="stages">
+  <body bgcolor="#000000">
+    <table id="stages" cellspacing=0 cellpadding=0>
       <tr>
-        <td id="bubbleman" background="bubbleman.png" alt="Bubble Man"><img id="x" src="x.png"></td>
-        <td id="airman"    background="airman.png"    alt="Air Man">   <img id="x" src="x.png"></td>
-        <td id="quickman"  background="quickman.png"  alt="Quick Man"> <img id="x" src="x.png"></td>
+        <td id="bubbleman" rowspan="3" background="bubbleman-60.png" alt="Bubble Man"><img id="x" src="x-60.png"></td>
+        <td id="airman"    rowspan="3" background="airman-60.png"    alt="Air Man">   <img id="x" src="x-60.png"></td>
+        <td id="quickman"  rowspan="3" background="quickman-60.png"  alt="Quick Man"> <img id="x" src="x-60.png"></td>
+        <td id="heatman"   rowspan="3" background="heatman-60.png"   alt="Heat Man">  <img id="x" src="x-60.png"></td>
+      <!--  
       </tr>
       <tr>
-        <td id="heatman" background="heatman.png" alt="Heat Man"><img id="x" src="x.png"></td>
-        <td id="wily"    background="wily.png"    alt="Dr. Wily"></td>
-        <td id="woodman" background="woodman.png" alt="Wood Man"><img id="x" src="x.png"></td>
+      -->
+        <td id="woodman"  rowspan="3" background="woodman-60.png"  alt="Wood Man"> <img id="x" src="x-60.png"></td>
+        <td id="metalman" rowspan="3" background="metalman-60.png" alt="Metal Man"><img id="x" src="x-60.png"></td>
+        <td id="flashman" rowspan="3" background="flashman-60.png" alt="Flash Man"><img id="x" src="x-60.png"></td>
+        <td id="crashman" rowspan="3" background="crashman-60.png" alt="Crash Man"><img id="x" src="x-60.png"></td>
+        <td id="item1"    alt="Item-1"><img id="bw" style="display: block; filter: grayscale(100%);" src="item1-20.png"></td>
       </tr>
       <tr>
-        <td id="metalman" background="metalman.png" alt="Metal Man"><img id="x" src="x.png"></td>
-        <td id="flashman" background="flashman.png" alt="Flash Man"><img id="x" src="x.png"></td>
-        <td id="crashman" background="crashman.png" alt="Crash Man"><img id="x" src="x.png"></td>
+        <td id="item2"    alt="Item-2"><img id="bw" style="display: block; filter: grayscale(100%);" src="item2-20.png"></td>
+      </tr>
+      <tr>
+        <td id="item3"    alt="Item-3"><img id="bw" style="display: block; filter: grayscale(100%);" src="item3-20.png"></td>
       </tr>
     </table>
     <script>
@@ -50,6 +66,9 @@
           if (child.id == "x"){
             toggle(child);
           }
+          if (child.id == "bw"){
+            toggle_bw(child);
+          }
         }
       }
       function toggle(thing) {
@@ -60,6 +79,14 @@
         else if(thing.style.visibility == 'visible')
           thing.style.visibility = 'hidden';
         else alert("'" + thing.style.visibility + "'");
+      }
+      function toggle_bw(thing) {
+        if(thing.style.filter == "grayscale(100%)")
+        {
+          thing.style.filter = "";
+        } else {
+          thing.style.filter = "grayscale(100%)";
+        }
       }
     </script>
   </body>
