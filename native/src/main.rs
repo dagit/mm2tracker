@@ -164,7 +164,6 @@ fn create_window(name: &str, title: &str) -> Result<Window, Error> {
         .iter()
         .map(|n| load_bitmap(n).expect("Failed to load asset"))
         .collect();
-    let item1_handle = load_bitmap(r"../assets/item1-20.bmp")?;
 
     // Place the buttons for each robo master
     for i in 0..8 {
