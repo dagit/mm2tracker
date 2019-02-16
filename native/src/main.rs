@@ -130,11 +130,14 @@ fn create_window(name: &str, title: &str) -> Result<Window, Error> {
     if handle.is_null() { return Err( Error::last_os_error() ) }
 
     //calculate the window size based on a desired client rect size
+    let robo_count = ROBO_PORTRAIT_FILENAMES.len() as i32;
+    let item_count = ITEM_PORTRAIT_FILENAMES.len() as i32;
+
     let mut window_rect = RECT {
         left: 0,
         top: 0,
-        right: ROBO_PORTRAIT_WIDTH * 8 + ITEM_PORTRAIT_WIDTH,
-        bottom: std::cmp::max(ROBO_PORTRAIT_HEIGHT, ITEM_PORTRAIT_HEIGHT * 3),
+        right: ROBO_PORTRAIT_WIDTH * robo_count + ITEM_PORTRAIT_WIDTH,
+        bottom: std::cmp::max(ROBO_PORTRAIT_HEIGHT, ITEM_PORTRAIT_HEIGHT * item_count),
     };
     let ok = unsafe { AdjustWindowRectEx(
         &mut window_rect,
@@ -195,7 +198,7 @@ fn create_window(name: &str, title: &str) -> Result<Window, Error> {
             as_wstr("BUTTON").as_ptr(),
             as_wstr("").as_ptr(),
             button_style,
-            8*ROBO_PORTRAIT_WIDTH, i as i32*ITEM_PORTRAIT_HEIGHT, ITEM_PORTRAIT_WIDTH, ITEM_PORTRAIT_HEIGHT,
+            robo_count*ROBO_PORTRAIT_WIDTH, i as i32*ITEM_PORTRAIT_HEIGHT, ITEM_PORTRAIT_WIDTH, ITEM_PORTRAIT_HEIGHT,
             handle,
             null_mut(),
             null_mut(),
