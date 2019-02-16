@@ -2,13 +2,33 @@
 
 use std::io::Error;
 use winapi::shared::windef::HWND;
+use winapi::um::winnt::HANDLE;
 
 static APP_NAME : &str = "mm2tracker";
 
+// TODO: It should be possible to extract these dimensions
+// from the loaded images
 const ROBO_PORTRAIT_WIDTH  : i32 = 54;
 const ROBO_PORTRAIT_HEIGHT : i32 = 60;
 const ITEM_PORTRAIT_WIDTH  : i32 = 37;
 const ITEM_PORTRAIT_HEIGHT : i32 = 20;
+
+const ROBO_PORTRAIT_FILENAMES : [&str; 8] = [
+    "../assets/bubbleman-60.bmp",
+    "../assets/airman-60.bmp",
+    "../assets/quickman-60.bmp",
+    "../assets/heatman-60.bmp",
+    "../assets/woodman-60.bmp",
+    "../assets/metalman-60.bmp",
+    "../assets/flashman-60.bmp",
+    "../assets/crashman-60.bmp"
+];
+
+const ITEM_PORTRAIT_FILENAMES : [&str; 3] = [
+    "../assets/item1-20.bmp",
+    "../assets/item2-20.bmp",
+    "../assets/item3-20.bmp",
+];
 
 fn as_wstr(s: &str) -> Vec<u16> {
     use std::ffi::OsStr;
@@ -19,6 +39,25 @@ fn as_wstr(s: &str) -> Vec<u16> {
 
 struct Window {
     handle : HWND,
+}
+
+fn load_bitmap(filename: &str) -> Result<HANDLE, Error> {
+    use std::ptr::null_mut;
+    use winapi::um::winuser::{
+        LoadImageW,
+        IMAGE_BITMAP,
+        LR_DEFAULTSIZE,
+        LR_LOADFROMFILE,
+    };
+    let handle = unsafe { LoadImageW(
+        null_mut(),
+        as_wstr(filename).as_ptr(),
+        IMAGE_BITMAP,
+        0, 0, LR_DEFAULTSIZE | LR_LOADFROMFILE)
+    };
+
+    if handle.is_null() { return Err( Error::last_os_error() ) };
+    Ok(handle)
 }
 
 fn create_window(name: &str, title: &str) -> Result<Window, Error> {
@@ -35,8 +74,10 @@ fn create_window(name: &str, title: &str) -> Result<Window, Error> {
         LoadCursorW,
         MoveWindow,
         RegisterClassW,
+        SendMessageW,
         WNDCLASSW,
-        BS_ICON,
+        BM_SETIMAGE,
+        BS_BITMAP,
         BS_AUTOCHECKBOX,
         BS_PUSHLIKE,
         CS_OWNDC,
@@ -46,6 +87,7 @@ fn create_window(name: &str, title: &str) -> Result<Window, Error> {
         GWL_STYLE,
         GWL_EXSTYLE,
         IDC_ARROW,
+        IMAGE_BITMAP,
         WS_OVERLAPPEDWINDOW,
         WS_VISIBLE,
         WS_CHILD,
@@ -112,11 +154,21 @@ fn create_window(name: &str, title: &str) -> Result<Window, Error> {
     };
     if ok == 0 { return Err( Error::last_os_error() ) }
 
-    let button_style = BS_ICON | WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX | BS_PUSHLIKE;
+    let button_style = BS_BITMAP | WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX | BS_PUSHLIKE;
+
+    let robo_images : Vec<HANDLE> = ROBO_PORTRAIT_FILENAMES
+        .iter()
+        .map(|n| load_bitmap(n).expect("Failed to load asset"))
+        .collect();
+    let item_images : Vec<HANDLE> = ITEM_PORTRAIT_FILENAMES
+        .iter()
+        .map(|n| load_bitmap(n).expect("Failed to load asset"))
+        .collect();
+    let item1_handle = load_bitmap(r"../assets/item1-20.bmp")?;
 
     // Place the buttons for each robo master
     for i in 0..8 {
-        let _ : HWND = unsafe { CreateWindowExW(
+        let _hbtn : HWND = unsafe { CreateWindowExW(
             0,
             as_wstr("BUTTON").as_ptr(),
             as_wstr("").as_ptr(),
@@ -127,11 +179,19 @@ fn create_window(name: &str, title: &str) -> Result<Window, Error> {
             null_mut(),
             null_mut() )
         };
+        unsafe {
+            SendMessageW (
+                _hbtn,
+                BM_SETIMAGE,
+                IMAGE_BITMAP as usize,
+                robo_images[i as usize] as isize,
+            );
+        }
     }
 
     // Place the buttons for each item
     for i in 0..3 {
-        let _ : HWND = unsafe { CreateWindowExW(
+        let _hbtn : HWND = unsafe { CreateWindowExW(
             0,
             as_wstr("BUTTON").as_ptr(),
             as_wstr("").as_ptr(),
@@ -142,6 +202,14 @@ fn create_window(name: &str, title: &str) -> Result<Window, Error> {
             null_mut(),
             null_mut() )
         };
+        unsafe {
+            SendMessageW (
+                _hbtn,
+                BM_SETIMAGE,
+                IMAGE_BITMAP as usize,
+                item_images[i as usize] as isize,
+            );
+        }
     }
     Ok( Window { handle } )
 
