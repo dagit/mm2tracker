@@ -166,13 +166,13 @@ fn create_window(name: &str, title: &str) -> Result<Window, Error> {
         .collect();
 
     // Place the buttons for each robo master
-    for i in 0..8 {
+    for i in 0..robo_images.len() {
         let _hbtn : HWND = unsafe { CreateWindowExW(
             0,
             as_wstr("BUTTON").as_ptr(),
             as_wstr("").as_ptr(),
             button_style,
-            i*ROBO_PORTRAIT_WIDTH, 0, ROBO_PORTRAIT_WIDTH, ROBO_PORTRAIT_HEIGHT,
+            i as i32*ROBO_PORTRAIT_WIDTH, 0, ROBO_PORTRAIT_WIDTH, ROBO_PORTRAIT_HEIGHT,
             handle,
             null_mut(),
             null_mut(),
@@ -183,19 +183,19 @@ fn create_window(name: &str, title: &str) -> Result<Window, Error> {
                 _hbtn,
                 BM_SETIMAGE,
                 IMAGE_BITMAP as usize,
-                robo_images[i as usize] as isize,
+                robo_images[i] as isize,
             );
         }
     }
 
     // Place the buttons for each item
-    for i in 0..3 {
+    for i in 0..item_images.len() {
         let _hbtn : HWND = unsafe { CreateWindowExW(
             0,
             as_wstr("BUTTON").as_ptr(),
             as_wstr("").as_ptr(),
             button_style,
-            8*ROBO_PORTRAIT_WIDTH, i*ITEM_PORTRAIT_HEIGHT, ITEM_PORTRAIT_WIDTH, ITEM_PORTRAIT_HEIGHT,
+            8*ROBO_PORTRAIT_WIDTH, i as i32*ITEM_PORTRAIT_HEIGHT, ITEM_PORTRAIT_WIDTH, ITEM_PORTRAIT_HEIGHT,
             handle,
             null_mut(),
             null_mut(),
@@ -206,7 +206,7 @@ fn create_window(name: &str, title: &str) -> Result<Window, Error> {
                 _hbtn,
                 BM_SETIMAGE,
                 IMAGE_BITMAP as usize,
-                item_images[i as usize] as isize,
+                item_images[i] as isize,
             );
         }
     }
