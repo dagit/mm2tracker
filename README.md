@@ -8,9 +8,9 @@ randomized play through of the game. To randomize your mm2 ROM, take a look at
 # Usage
 
 The easiest way to use the tracker is to visit the [version I
-host](https://codersbase.com/mm2tracker). Since the tracker is currently just a
-single html file and a set of images, you can also run the tracker by cloning
-this repository and pointing your browser at the index.html file.
+host](https://files.codersbase.com/mm2tracker). Since the tracker is currently
+just a single html file and a set of images, you can also run the tracker by
+cloning this repository and pointing your browser at the index.html file.
 
 If you are streaming and want to display the tracker using OBS there are two
 primary ways. If you have the tracker open in a browser window, then you can
