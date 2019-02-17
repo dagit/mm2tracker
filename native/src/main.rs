@@ -2,6 +2,12 @@
 
 use std::io::Error;
 use winapi::shared::windef::HWND;
+use winapi::shared::minwindef::{
+    UINT,
+    WPARAM,
+    LPARAM,
+    LRESULT,
+};
 use winapi::um::winnt::HANDLE;
 
 static APP_NAME : &str = "mm2tracker";
@@ -12,6 +18,11 @@ const ROBO_PORTRAIT_WIDTH  : i32 = 54;
 const ROBO_PORTRAIT_HEIGHT : i32 = 60;
 const ITEM_PORTRAIT_WIDTH  : i32 = 37;
 const ITEM_PORTRAIT_HEIGHT : i32 = 20;
+
+enum ContextMenu {
+    Reset = 1,
+    Exit = 2,
+}
 
 const ROBO_PORTRAIT_FILENAMES : [&str; 8] = [
     "../assets/bubbleman-60.bmp",
@@ -100,7 +111,7 @@ fn create_window(name: &str, title: &str) -> Result<Window, Error> {
 
     let wnd_class = unsafe { WNDCLASSW {
         style: CS_OWNDC | CS_HREDRAW | CS_VREDRAW,
-        lpfnWndProc : Some( DefWindowProcW ),
+        lpfnWndProc : Some( window_proc ),
         hInstance: hinstance,
         lpszClassName: name.as_ptr(),
         cbClsExtra: 0,
@@ -213,9 +224,67 @@ fn create_window(name: &str, title: &str) -> Result<Window, Error> {
             );
         }
     }
+
     Ok( Window { handle } )
 
 }
+
+pub unsafe extern "system" fn window_proc(hwindow: HWND, msg: UINT, wparam: WPARAM, lparam: LPARAM) -> LRESULT
+{
+    use std::ptr::null_mut;
+    use winapi::um::winuser::{
+        DefWindowProcW,
+        PostQuitMessage,
+        CreatePopupMenu,
+        InsertMenuW,
+        TrackPopupMenu,
+        MF_BYPOSITION,
+        MF_STRING,
+        MF_ENABLED,
+        MF_SEPARATOR,
+        WM_DESTROY,
+        WM_CONTEXTMENU,
+        WM_NOTIFY,
+        LPNMHDR,
+        TPM_TOPALIGN,
+        TPM_LEFTALIGN,
+        TPM_RETURNCMD,
+    };
+    use winapi::um::commctrl::{
+        NM_CUSTOMDRAW,
+    };
+    use winapi::shared::minwindef::BOOL; // this is really c_int
+    use winapi::shared::windowsx::{
+        GET_X_LPARAM,
+        GET_Y_LPARAM,
+    };
+
+    if msg == WM_DESTROY {
+        PostQuitMessage(0);
+    } else if msg == WM_NOTIFY {
+        let pnm = lparam as LPNMHDR;
+        if (*pnm).code == NM_CUSTOMDRAW {
+            //custom_draw_button((*pnm).hwndFrom, lparam as LPNMCUSTOMDRAW);
+        }
+    } else if msg == WM_CONTEXTMENU {
+        let menu = CreatePopupMenu();
+        InsertMenuW(menu, -1i32 as u32, MF_BYPOSITION | MF_STRING | MF_ENABLED, ContextMenu::Reset as usize, as_wstr("Reset").as_ptr());
+        InsertMenuW(menu, -1i32 as u32, MF_BYPOSITION | MF_SEPARATOR, 0, null_mut());
+        InsertMenuW(menu, -1i32 as u32, MF_BYPOSITION | MF_STRING | MF_ENABLED, ContextMenu::Exit as usize, as_wstr("Exit").as_ptr());
+        let selection = TrackPopupMenu(menu, TPM_RETURNCMD | TPM_TOPALIGN | TPM_LEFTALIGN, GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam), 0, hwindow, null_mut());
+        if selection == ContextMenu::Exit as BOOL {
+            PostQuitMessage(0);
+        } else if selection == ContextMenu::Reset as BOOL {
+            // TODO
+        }
+    }
+
+    DefWindowProcW(hwindow, msg, wparam, lparam)
+}
+
+//fn custom_draw_button(hwnd: HWND, nmc: &NMCUSTOMDRAW) -> LRESULT
+//{
+//}
 
 fn handle_message(window: &mut Window) -> bool {
     use std::mem;
