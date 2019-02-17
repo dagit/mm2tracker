@@ -9,6 +9,7 @@ use winapi::shared::minwindef::{
     LRESULT,
 };
 use winapi::um::winnt::HANDLE;
+use winapi::um::commctrl::NMCUSTOMDRAW;
 
 static APP_NAME : &str = "mm2tracker";
 
@@ -50,6 +51,15 @@ fn as_wstr(s: &str) -> Vec<u16> {
 
 struct Window {
     handle : HWND,
+    robo_buttons: Vec<HWND>,
+    item_buttons: Vec<HWND>,
+}
+
+impl Window {
+    fn new() -> Self {
+        use std::ptr::null_mut;
+        Window { handle: null_mut(), robo_buttons: vec![], item_buttons: vec![] }
+    }
 }
 
 fn load_bitmap(filename: &str) -> Result<HANDLE, Error> {
@@ -71,38 +81,23 @@ fn load_bitmap(filename: &str) -> Result<HANDLE, Error> {
     Ok(handle)
 }
 
-fn create_window(name: &str, title: &str) -> Result<Window, Error> {
+fn initialize_window(window: &mut Window, name: &str, title: &str) -> Result<(), Error> {
     use std::ptr::null_mut;
     use winapi::um::libloaderapi::GetModuleHandleW;
-    use winapi::shared::windef::{
-        RECT,
-    };
     use winapi::um::winuser::{
-        AdjustWindowRectEx,
         CreateWindowExW,
-        DefWindowProcW,
-        GetWindowLongW,
         LoadCursorW,
-        MoveWindow,
         RegisterClassW,
-        SendMessageW,
         WNDCLASSW,
-        BM_SETIMAGE,
-        BS_BITMAP,
-        BS_AUTOCHECKBOX,
-        BS_PUSHLIKE,
         CS_OWNDC,
         CS_HREDRAW,
         CS_VREDRAW,
         CW_USEDEFAULT,
-        GWL_STYLE,
-        GWL_EXSTYLE,
         IDC_ARROW,
-        IMAGE_BITMAP,
         WS_OVERLAPPEDWINDOW,
         WS_VISIBLE,
-        WS_CHILD,
     };
+    use winapi::shared::minwindef::LPVOID;
 
     let name = as_wstr(name);
     let title = as_wstr(title);
@@ -135,10 +130,37 @@ fn create_window(name: &str, title: &str) -> Result<Window, Error> {
         null_mut(),
         null_mut(),
         hinstance,
-        null_mut(),
+        std::mem::transmute::<&mut Window, LPVOID>(window),
     ) };
 
     if handle.is_null() { return Err( Error::last_os_error() ) }
+    window.handle = handle;
+    window.robo_buttons = vec![];
+    window.item_buttons = vec![];
+    Ok( () )
+}
+
+fn layout_window(window: &mut Window) -> Result<(), Error> {
+    use std::ptr::null_mut;
+    use winapi::shared::windef::{
+        RECT,
+    };
+    use winapi::um::winuser::{
+        AdjustWindowRectEx,
+        CreateWindowExW,
+        GetWindowLongW,
+        MoveWindow,
+        SendMessageW,
+        BM_SETIMAGE,
+        BS_BITMAP,
+        BS_AUTOCHECKBOX,
+        BS_PUSHLIKE,
+        GWL_STYLE,
+        GWL_EXSTYLE,
+        IMAGE_BITMAP,
+        WS_VISIBLE,
+        WS_CHILD,
+    };
 
     //calculate the window size based on a desired client rect size
     let robo_count = ROBO_PORTRAIT_FILENAMES.len() as i32;
@@ -152,15 +174,15 @@ fn create_window(name: &str, title: &str) -> Result<Window, Error> {
     };
     let ok = unsafe { AdjustWindowRectEx(
         &mut window_rect,
-        GetWindowLongW(handle, GWL_STYLE) as u32,
+        GetWindowLongW(window.handle, GWL_STYLE) as u32,
         false as i32,
-        GetWindowLongW(handle, GWL_EXSTYLE) as u32 )
+        GetWindowLongW(window.handle, GWL_EXSTYLE) as u32 )
     };
     if ok == 0 { return Err( Error::last_os_error() ) }
 
     //Now resize the window
     let ok = unsafe { MoveWindow(
-        handle,
+        window.handle,
         0, 0,
         window_rect.right - window_rect.left,
         window_rect.bottom - window_rect.top,
@@ -181,63 +203,69 @@ fn create_window(name: &str, title: &str) -> Result<Window, Error> {
 
     // Place the buttons for each robo master
     for i in 0..robo_images.len() {
-        let _hbtn : HWND = unsafe { CreateWindowExW(
+        let hbtn : HWND = unsafe { CreateWindowExW(
             0,
             as_wstr("BUTTON").as_ptr(),
             as_wstr("").as_ptr(),
             button_style,
             i as i32*ROBO_PORTRAIT_WIDTH, 0, ROBO_PORTRAIT_WIDTH, ROBO_PORTRAIT_HEIGHT,
-            handle,
+            window.handle,
             null_mut(),
             null_mut(),
             null_mut() )
         };
         unsafe {
             SendMessageW (
-                _hbtn,
+                hbtn,
                 BM_SETIMAGE,
                 IMAGE_BITMAP as usize,
                 robo_images[i] as isize,
             );
         }
+        window.robo_buttons.push(hbtn);
     }
 
     // Place the buttons for each item
     for i in 0..item_images.len() {
-        let _hbtn : HWND = unsafe { CreateWindowExW(
+        let hbtn : HWND = unsafe { CreateWindowExW(
             0,
             as_wstr("BUTTON").as_ptr(),
             as_wstr("").as_ptr(),
             button_style,
             robo_count*ROBO_PORTRAIT_WIDTH, i as i32*ITEM_PORTRAIT_HEIGHT, ITEM_PORTRAIT_WIDTH, ITEM_PORTRAIT_HEIGHT,
-            handle,
+            window.handle,
             null_mut(),
             null_mut(),
             null_mut() )
         };
         unsafe {
             SendMessageW (
-                _hbtn,
+                hbtn,
                 BM_SETIMAGE,
                 IMAGE_BITMAP as usize,
                 item_images[i] as isize,
             );
         }
+        window.item_buttons.push(hbtn);
     }
 
-    Ok( Window { handle } )
-
+    Ok(())
 }
 
 pub unsafe extern "system" fn window_proc(hwindow: HWND, msg: UINT, wparam: WPARAM, lparam: LPARAM) -> LRESULT
 {
     use std::ptr::null_mut;
+    use winapi::um::winuser;
     use winapi::um::winuser::{
         DefWindowProcW,
         PostQuitMessage,
         CreatePopupMenu,
         InsertMenuW,
         TrackPopupMenu,
+        GetWindowLongPtrW,
+        SetWindowLongPtrW,
+        SetWindowPos,
+        CREATESTRUCTW,
         MF_BYPOSITION,
         MF_STRING,
         MF_ENABLED,
@@ -245,10 +273,17 @@ pub unsafe extern "system" fn window_proc(hwindow: HWND, msg: UINT, wparam: WPAR
         WM_DESTROY,
         WM_CONTEXTMENU,
         WM_NOTIFY,
+        WM_NCCREATE,
         LPNMHDR,
+        GWLP_USERDATA,
         TPM_TOPALIGN,
         TPM_LEFTALIGN,
         TPM_RETURNCMD,
+        SWP_NOMOVE,
+        SWP_NOSIZE,
+        SWP_NOZORDER,
+        BM_SETCHECK,
+        BST_UNCHECKED,
     };
     use winapi::um::commctrl::{
         NM_CUSTOMDRAW,
@@ -259,7 +294,10 @@ pub unsafe extern "system" fn window_proc(hwindow: HWND, msg: UINT, wparam: WPAR
         GET_Y_LPARAM,
     };
 
-    if msg == WM_DESTROY {
+    if msg == WM_NCCREATE {
+        SetWindowLongPtrW(hwindow, GWLP_USERDATA, (*(lparam as *mut CREATESTRUCTW)).lpCreateParams as isize);
+        SetWindowPos(hwindow, null_mut(), 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
+    } else if msg == WM_DESTROY {
         PostQuitMessage(0);
     } else if msg == WM_NOTIFY {
         let pnm = lparam as LPNMHDR;
@@ -275,16 +313,23 @@ pub unsafe extern "system" fn window_proc(hwindow: HWND, msg: UINT, wparam: WPAR
         if selection == ContextMenu::Exit as BOOL {
             PostQuitMessage(0);
         } else if selection == ContextMenu::Reset as BOOL {
-            // TODO
+            let window = std::mem::transmute::<isize, &mut Window>(GetWindowLongPtrW(hwindow, GWLP_USERDATA));
+            if window.handle.is_null() { PostQuitMessage(0); }
+            window.robo_buttons
+                .iter()
+                .chain(window.item_buttons.iter())
+                .for_each(|hb| {winuser::SendMessageW(*hb, BM_SETCHECK, BST_UNCHECKED, 0);});
         }
     }
 
     DefWindowProcW(hwindow, msg, wparam, lparam)
 }
 
-//fn custom_draw_button(hwnd: HWND, nmc: &NMCUSTOMDRAW) -> LRESULT
-//{
-//}
+fn custom_button_draw(hwnd: HWND, nmc: &NMCUSTOMDRAW) -> LRESULT
+{
+    print_message("custom_button_draw");
+    0
+}
 
 fn handle_message(window: &mut Window) -> bool {
     use std::mem;
@@ -309,6 +354,7 @@ fn handle_message(window: &mut Window) -> bool {
     }
 }
 
+#[allow(dead_code)] //allow it because this mainly exists for debugging purposes
 fn print_message(msg: &str) -> Result<i32, Error> {
     use std::ptr::null_mut;
     use winapi::um::winuser::{MB_OK, MessageBoxW};
@@ -323,7 +369,9 @@ fn print_message(msg: &str) -> Result<i32, Error> {
 }
 
 fn main() {
-    let mut window = create_window(APP_NAME,APP_NAME).expect("Failed to create window");
+    let mut window = Window::new();
+    initialize_window(&mut window, APP_NAME, APP_NAME).expect("Failed to create window");
+    layout_window(&mut window).expect("Failed to layout window");
 
     loop {
         if !handle_message( &mut window ) {
