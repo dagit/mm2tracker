@@ -3,6 +3,7 @@ name = "mm2tracker"
 version = "0.1.0"
 authors = ["Jason Dagit <dagitj@gmail.com>"]
 edition = "2018"
+build = "build.rs"
 
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = [ "std", "winuser", "libloaderapi", "commctrl", "uxtheme", "windowsx" ] }
+winapi = { version = "0.3", features = [ "std", "winuser", "libloaderapi", "commctrl", "uxtheme", "windowsx", "wingdi" ] }

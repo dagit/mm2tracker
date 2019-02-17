@@ -9,7 +9,10 @@ use winapi::shared::minwindef::{
     LRESULT,
 };
 use winapi::um::winnt::HANDLE;
-use winapi::um::commctrl::NMCUSTOMDRAW;
+use winapi::um::commctrl::{
+    LPNMCUSTOMDRAW,
+    NMCUSTOMDRAW,
+};
 
 static APP_NAME : &str = "mm2tracker";
 
@@ -42,6 +45,8 @@ const ITEM_PORTRAIT_FILENAMES : [&str; 3] = [
     "../assets/item3-20.bmp",
 ];
 
+const XMARK_FILENAME : &str = "../assets/x-60.bmp";
+
 fn as_wstr(s: &str) -> Vec<u16> {
     use std::ffi::OsStr;
     use std::iter::once;
@@ -50,15 +55,21 @@ fn as_wstr(s: &str) -> Vec<u16> {
 }
 
 struct Window {
-    handle : HWND,
+    handle: HWND,
     robo_buttons: Vec<HWND>,
     item_buttons: Vec<HWND>,
+    xmark: HANDLE,
 }
 
 impl Window {
     fn new() -> Self {
         use std::ptr::null_mut;
-        Window { handle: null_mut(), robo_buttons: vec![], item_buttons: vec![] }
+        Window {
+            handle: null_mut(),
+            robo_buttons: vec![],
+            item_buttons: vec![],
+            xmark: null_mut(),
+        }
     }
 }
 
@@ -94,7 +105,6 @@ fn initialize_window(window: &mut Window, name: &str, title: &str) -> Result<(),
         CS_VREDRAW,
         CW_USEDEFAULT,
         IDC_ARROW,
-        WS_OVERLAPPEDWINDOW,
         WS_VISIBLE,
     };
     use winapi::shared::minwindef::LPVOID;
@@ -122,7 +132,7 @@ fn initialize_window(window: &mut Window, name: &str, title: &str) -> Result<(),
         0,
         name.as_ptr(),
         title.as_ptr(),
-        WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+        WS_VISIBLE,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
         0,
@@ -135,8 +145,6 @@ fn initialize_window(window: &mut Window, name: &str, title: &str) -> Result<(),
 
     if handle.is_null() { return Err( Error::last_os_error() ) }
     window.handle = handle;
-    window.robo_buttons = vec![];
-    window.item_buttons = vec![];
     Ok( () )
 }
 
@@ -201,6 +209,8 @@ fn layout_window(window: &mut Window) -> Result<(), Error> {
         .map(|n| load_bitmap(n).expect("Failed to load asset"))
         .collect();
 
+    window.xmark = load_bitmap(XMARK_FILENAME).expect("Failed to load asset");
+
     // Place the buttons for each robo master
     for i in 0..robo_images.len() {
         let hbtn : HWND = unsafe { CreateWindowExW(
@@ -248,7 +258,6 @@ fn layout_window(window: &mut Window) -> Result<(), Error> {
         }
         window.item_buttons.push(hbtn);
     }
-
     Ok(())
 }
 
@@ -287,6 +296,7 @@ pub unsafe extern "system" fn window_proc(hwindow: HWND, msg: UINT, wparam: WPAR
     };
     use winapi::um::commctrl::{
         NM_CUSTOMDRAW,
+        LPNMCUSTOMDRAW,
     };
     use winapi::shared::minwindef::BOOL; // this is really c_int
     use winapi::shared::windowsx::{
@@ -301,9 +311,16 @@ pub unsafe extern "system" fn window_proc(hwindow: HWND, msg: UINT, wparam: WPAR
         PostQuitMessage(0);
     } else if msg == WM_NOTIFY {
         let pnm = lparam as LPNMHDR;
-        if (*pnm).code == NM_CUSTOMDRAW {
-            //custom_draw_button((*pnm).hwndFrom, lparam as LPNMCUSTOMDRAW);
+        let window = std::mem::transmute::<isize, &mut Window>(GetWindowLongPtrW(hwindow, GWLP_USERDATA));
+        if window.handle.is_null() { PostQuitMessage(0); }
+
+        if (*pnm).code == NM_CUSTOMDRAW &&
+            (window.robo_buttons.contains(&(*pnm).hwndFrom) ||
+             window.item_buttons.contains(&(*pnm).hwndFrom))
+        {
+            return custom_button_draw(&window, (*pnm).hwndFrom, std::mem::transmute::<_,LPNMCUSTOMDRAW>(lparam));
         }
+
     } else if msg == WM_CONTEXTMENU {
         let menu = CreatePopupMenu();
         InsertMenuW(menu, -1i32 as u32, MF_BYPOSITION | MF_STRING | MF_ENABLED, ContextMenu::Reset as usize, as_wstr("Reset").as_ptr());
@@ -325,9 +342,56 @@ pub unsafe extern "system" fn window_proc(hwindow: HWND, msg: UINT, wparam: WPAR
     DefWindowProcW(hwindow, msg, wparam, lparam)
 }
 
-fn custom_button_draw(hwnd: HWND, nmc: &NMCUSTOMDRAW) -> LRESULT
+fn custom_button_draw(window: &Window, hwnd: HWND, nmc: LPNMCUSTOMDRAW) -> LRESULT
 {
-    print_message("custom_button_draw");
+    use std::ptr::null_mut;
+    use winapi::shared::windef::{
+        RECT,
+        HICON,
+        HBITMAP,
+        HBRUSH,
+        HGDIOBJ,
+    };
+    use winapi::um::commctrl::{
+        CDDS_PREERASE,
+        CDRF_SKIPDEFAULT,
+    };
+    use winapi::um::winuser::{
+        DrawIconEx,
+        FillRect,
+        GetClientRect,
+        SendMessageW,
+        BM_GETIMAGE,
+        BM_GETCHECK,
+        IMAGE_ICON,
+        IMAGE_BITMAP,
+        BST_CHECKED,
+    };
+    use winapi::um::uxtheme::DrawThemeParentBackground;
+    use winapi::um::wingdi::{
+        CreatePatternBrush,
+        DeleteObject,
+    };
+    unsafe {
+        if (*nmc).dwDrawStage == CDDS_PREERASE {
+            let mut rc = RECT {top: 0, left: 0, right: 0, bottom: 0};
+            GetClientRect(hwnd, &mut rc);
+            DrawThemeParentBackground(hwnd, (*nmc).hdc, &rc);
+            let hbitmap = std::mem::transmute::<_,HBITMAP>(SendMessageW(hwnd, BM_GETIMAGE, IMAGE_BITMAP as usize, 0));
+            //DrawIconEx((*nmc).hdc, 0, 0, hicon, rc.right, rc.bottom, 0, null_mut(), 0x03 /*DI_NORMAL*/);
+            let hbrush = CreatePatternBrush(hbitmap);
+            FillRect((*nmc).hdc, &rc, hbrush);
+            DeleteObject(std::mem::transmute::<HBRUSH,HGDIOBJ>(hbrush));
+            // Now check if it's checked
+            let status = SendMessageW(hwnd, BM_GETCHECK, 0, 0) as usize;
+            if status == BST_CHECKED {
+                let hbrush = CreatePatternBrush(std::mem::transmute::<HANDLE,HBITMAP>(window.xmark));
+                FillRect((*nmc).hdc, &rc, hbrush);
+                DeleteObject(std::mem::transmute::<HBRUSH,HGDIOBJ>(hbrush));
+            }
+            return CDRF_SKIPDEFAULT;
+        }
+    }
     0
 }
 
