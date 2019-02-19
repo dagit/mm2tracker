@@ -6,4 +6,7 @@ edition = "2018"
 build = "build.rs"
 
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = [ "std", "winuser", "libloaderapi", "commctrl", "uxtheme", "windowsx", "wingdi" ] }
+winapi = { version = "0.3", features = [ "std", "winuser", "libloaderapi", "commctrl", "uxtheme", "windowsx", "wingdi", "objidl", "winbase", "wincodec", "objbase", "combaseapi" ] }
+
+[build-dependencies]
+winres = "0.1"

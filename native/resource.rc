@@ -1,0 +1,46 @@
+#pragma code_page(65001)
+1 VERSIONINFO
+FILESUBTYPE 0x0
+FILEFLAGSMASK 0x3f
+FILEOS 0x40004
+FILEFLAGS 0x0
+FILEVERSION 0, 1, 0, 0
+PRODUCTVERSION 0, 1, 0, 0
+FILETYPE 0x1
+{
+BLOCK "StringFileInfo"
+{
+BLOCK "000004b0"
+{
+VALUE "ProductName", "mm2tracker"
+VALUE "FileVersion", "0.1.0"
+VALUE "ProductVersion", "0.1.0"
+}
+}
+BLOCK "VarFileInfo" {
+VALUE "Translation", 0x0, 0x04b0
+}
+}
+1 24 "mm2tracker.exe.manifest"
+IMG_BUBBLEMAN   BITMAP "../assets/bubbleman-60.bmp";
+IMG_AIRMAN      BITMAP "../assets/airman-60.bmp";
+IMG_QUICKMAN    BITMAP "../assets/quickman-60.bmp";
+IMG_HEATMAN     BITMAP "../assets/heatman-60.bmp";
+IMG_WOODMAN     BITMAP "../assets/woodman-60.bmp";
+IMG_METALMAN    BITMAP "../assets/metalman-60.bmp";
+IMG_FLASHMAN    BITMAP "../assets/flashman-60.bmp";
+IMG_CRASHMAN    BITMAP "../assets/crashman-60.bmp";
+IMG_BUBBLEMAN_X BITMAP "../assets/bubbleman-X-60.bmp";
+IMG_AIRMAN_X    BITMAP "../assets/airman-X-60.bmp";
+IMG_QUICKMAN_X  BITMAP "../assets/quickman-X-60.bmp";
+IMG_HEATMAN_X   BITMAP "../assets/heatman-X-60.bmp";
+IMG_WOODMAN_X   BITMAP "../assets/woodman-X-60.bmp";
+IMG_METALMAN_X  BITMAP "../assets/metalman-X-60.bmp";
+IMG_FLASHMAN_X  BITMAP "../assets/flashman-X-60.bmp";
+IMG_CRASHMAN_X  BITMAP "../assets/crashman-X-60.bmp";
+IMG_ITEM1_BW    BITMAP "../assets/item1-20-bw.bmp";
+IMG_ITEM2_BW    BITMAP "../assets/item2-20-bw.bmp";
+IMG_ITEM3_BW    BITMAP "../assets/item3-20-bw.bmp";
+IMG_ITEM1       BITMAP "../assets/item1-20.bmp";
+IMG_ITEM2       BITMAP "../assets/item2-20.bmp";
+IMG_ITEM3       BITMAP "../assets/item3-20.bmp";
