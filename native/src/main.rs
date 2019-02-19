@@ -1,10 +1,6 @@
 #![windows_subsystem = "windows"]
 
 use std::io::Error;
-use std::ptr::null_mut;
-use winapi::shared::winerror::{
-    SUCCEEDED,
-};
 use winapi::shared::windef::{
     HWND,
     HBITMAP,
@@ -15,14 +11,9 @@ use winapi::shared::minwindef::{
     LPARAM,
     LRESULT,
 };
-use winapi::um::winnt::HANDLE;
 use winapi::um::commctrl::{
-    //IStream,
     LPNMCUSTOMDRAW,
-    NMCUSTOMDRAW,
 };
-use winapi::um::wincodec::IWICBitmapSource;
-use winapi::um::objidlbase::IStream;
 
 static APP_NAME : &str = "mm2tracker";
 
@@ -83,142 +74,6 @@ impl Window {
     }
 }
 
-/*
-fn load_bitmap(filename: &str) -> Result<HANDLE, Error> {
-    use std::ptr::null_mut;
-    use winapi::um::winuser::{
-        LoadImageW,
-        IMAGE_BITMAP,
-        LR_DEFAULTSIZE,
-        LR_LOADFROMFILE,
-    };
-    let handle = unsafe { LoadImageW(
-        null_mut(),
-        as_wstr(filename).as_ptr(),
-        IMAGE_BITMAP,
-        0, 0, LR_DEFAULTSIZE | LR_LOADFROMFILE)
-    };
-
-    if handle.is_null() { return Err( Error::last_os_error() ) };
-    Ok(handle)
-}
-*/
-fn create_stream_on_resource(name: &str, typ: &str) -> Result<*mut IStream, Error> {
-
-    use winapi::shared::minwindef::TRUE;
-    use winapi::um::minwinbase::{
-        LMEM_MOVEABLE,
-    };
-    use winapi::um::winbase::{
-        GlobalAlloc,
-        GlobalLock,
-        GlobalUnlock,
-    };
-    use winapi::um::libloaderapi::{
-        FindResourceW,
-        SizeofResource,
-        LockResource,
-        LoadResource,
-    };
-    use winapi::um::combaseapi::{
-        CreateStreamOnHGlobal,
-    };
-    use winapi::um::winnt::RtlCopyMemory;
-    unsafe {
-        let mut istream: *mut IStream = null_mut();
-        // TODO: probably need to free these resources as this exits. Look into using Drop trait.
-        let hrsrc = FindResourceW(null_mut(), as_wstr(name).as_ptr(), as_wstr(typ).as_ptr());
-        if hrsrc.is_null() { return Err( Error::last_os_error() ) };
-        let size = SizeofResource(null_mut(), hrsrc);
-        let himage = LoadResource(null_mut(), hrsrc);
-        if himage.is_null() { return Err( Error::last_os_error() ) };
-        let srcPtr = LockResource(himage);
-        if srcPtr.is_null() { return Err( Error::last_os_error() ) };
-        let destMem = GlobalAlloc(LMEM_MOVEABLE, size as usize);
-        if destMem.is_null() { return Err( Error::last_os_error() ) };
-        let destPtr = GlobalLock(destMem);
-        if destPtr.is_null() { return Err( Error::last_os_error() ) };
-        RtlCopyMemory(destPtr, srcPtr, size as usize);
-        GlobalUnlock(destMem);
-        if SUCCEEDED(CreateStreamOnHGlobal(destMem, TRUE, &mut istream)) {
-            Ok(istream)
-        } else {
-            Err( Error::last_os_error() )
-        }
-    }
-}
-
-fn load_bitmap_from_stream(stream: *mut IStream) -> Result<*mut IWICBitmapSource, Error> {
-    use std::ops::Deref;
-    use winapi::um::wincodec::{
-        IWICBitmapDecoder,
-        CLSID_WICBmpDecoder,
-        WICDecodeMetadataCacheOnLoad,
-        WICConvertBitmapSource,
-        IWICBitmapFrameDecode,
-        GUID_WICPixelFormat32bppPBGRA,
-    };
-    use winapi::shared::minwindef::LPVOID;
-    use winapi::Interface;
-    use winapi::shared::wtypesbase::CLSCTX_INPROC_SERVER;
-    use winapi::um::combaseapi::CoCreateInstance;
-    let mut bitmap : *mut IWICBitmapSource = null_mut();
-    let mut decoder : *mut IWICBitmapDecoder = null_mut();
-    unsafe {
-        if !SUCCEEDED(CoCreateInstance(
-            &CLSID_WICBmpDecoder,
-            null_mut(),
-            CLSCTX_INPROC_SERVER,
-            &IWICBitmapDecoder::uuidof(),
-            std::mem::transmute::<_,*mut LPVOID>(&mut decoder))) { return Err( Error::last_os_error() ) };
-        if !SUCCEEDED((*decoder).Initialize(stream, WICDecodeMetadataCacheOnLoad)) {
-            (*decoder).Release();
-            return Err( Error::last_os_error() )
-        }
-        // TODO: check the frame count
-        let mut frame: *mut IWICBitmapFrameDecode = null_mut();
-        if !SUCCEEDED((*decoder).GetFrame(0, &mut frame)) {
-            (*decoder).Release();
-            return Err( Error::last_os_error() )
-        }
-        if !SUCCEEDED(WICConvertBitmapSource(
-            &GUID_WICPixelFormat32bppPBGRA,
-            (*frame).deref(),
-            &mut bitmap
-        )) {
-            print_message("convert failed");
-            return Err( Error::last_os_error() );
-        }
-        (*frame).Release();
-        Ok(bitmap)
-    }
-}
-
-fn iwicbitmap_to_hbitmap(bitmap: *mut IWICBitmapSource) -> Result<HBITMAP, Error> {
-    use winapi::um::wingdi::CreateBitmap;
-    use winapi::shared::minwindef::LPVOID;
-    let mut hbitmap : HBITMAP = null_mut();
-    let mut width = 0u32;
-    let mut height = 0u32;
-    unsafe {
-        if !SUCCEEDED((*bitmap).GetSize(&mut width, &mut height)) { return Err( Error::last_os_error() ) }
-
-        //print_message(&format!("({}, {})", width, height));
-        let depth = 4;
-        let mut buf : Vec<u8> = Vec::with_capacity((width * height * depth) as usize);
-        (*bitmap).CopyPixels(null_mut(), width * depth, buf.len() as u32, buf.as_mut_ptr());
-        hbitmap = CreateBitmap(
-            width as i32,
-            height as i32,
-            1,
-            8*depth,
-            std::mem::transmute::<*const u8, LPVOID>(buf.as_ptr())
-        );
-    }
-    Ok(hbitmap)
-}
-
-// TODO: https://docs.microsoft.com/en-us/windows/desktop/api/wincodec/nf-wincodec-iwicstream-initializefromfilename
 fn initialize_window(window: &mut Window, name: &str, title: &str) -> Result<(), Error> {
     use std::ptr::null_mut;
     use winapi::um::libloaderapi::GetModuleHandleW;
@@ -267,7 +122,7 @@ fn initialize_window(window: &mut Window, name: &str, title: &str) -> Result<(),
         null_mut(),
         null_mut(),
         hinstance,
-        std::mem::transmute::<&mut Window, LPVOID>(window),
+        window as *mut Window as LPVOID,
     ) };
 
     if handle.is_null() { return Err( Error::last_os_error() ) }
@@ -289,14 +144,11 @@ fn layout_window(window: &mut Window) -> Result<(), Error> {
         CreateWindowExW,
         GetWindowLongW,
         MoveWindow,
-        SendMessageW,
-        BM_SETIMAGE,
         BS_BITMAP,
         BS_AUTOCHECKBOX,
         BS_PUSHLIKE,
         GWL_STYLE,
         GWL_EXSTYLE,
-        IMAGE_BITMAP,
         WS_VISIBLE,
         WS_CHILD,
     };
@@ -330,33 +182,11 @@ fn layout_window(window: &mut Window) -> Result<(), Error> {
     if ok == 0 { return Err( Error::last_os_error() ) }
 
     let button_style = BS_BITMAP | WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX | BS_PUSHLIKE;
-    /*
-    let robo_images : Vec<HANDLE> = ROBO_PORTRAIT_FILENAMES
-        .iter()
-        .map(|n| load_bitmap(n).expect("Failed to load asset"))
-        .collect();
-    let item_images : Vec<HANDLE> = ITEM_PORTRAIT_FILENAMES
-        .iter()
-        .map(|n| load_bitmap(n).expect("Failed to load asset"))
-        .collect();
-     */
     let hinstance = unsafe { GetModuleHandleW( null_mut() ) };
     fn load(hinst: HINSTANCE, (unchecked, checked): &(&str, &str)) -> (HBITMAP, HBITMAP)
     {
         use winapi::um::winuser::LoadBitmapW;
-        /*
-        let istream = create_stream_on_resource(unchecked, "BMP").unwrap();
-        let bitmapsource = load_bitmap_from_stream(istream).unwrap();
-        let uncheckedbitmap = iwicbitmap_to_hbitmap(bitmapsource).unwrap();
-
-        let istream = create_stream_on_resource(checked, "BMP").unwrap();
-        let bitmapsource = load_bitmap_from_stream(istream).unwrap();
-        let checkedbitmap = iwicbitmap_to_hbitmap(bitmapsource).unwrap();
-        (uncheckedbitmap, checkedbitmap)
-         */
         unsafe {
-            let h = LoadBitmapW(hinst, as_wstr(unchecked).as_ptr());
-            print_message(&format!("{:?}", h));
             (LoadBitmapW(hinst, as_wstr(unchecked).as_ptr()),
              LoadBitmapW(hinst, as_wstr(checked).as_ptr()))
         }
@@ -383,16 +213,6 @@ fn layout_window(window: &mut Window) -> Result<(), Error> {
             null_mut(),
             null_mut() )
         };
-        /*
-        unsafe {
-            SendMessageW (
-                hbtn,
-                BM_SETIMAGE,
-                IMAGE_BITMAP as usize,
-                robo_images[i].0 as isize,
-            );
-        }
-        */
         window.robo_buttons.push(hbtn);
     }
 
@@ -409,16 +229,6 @@ fn layout_window(window: &mut Window) -> Result<(), Error> {
             null_mut(),
             null_mut() )
         };
-        /*
-        unsafe {
-            SendMessageW (
-                hbtn,
-                BM_SETIMAGE,
-                IMAGE_BITMAP as usize,
-                item_images[i] as isize,
-            );
-        }
-        */
         window.item_buttons.push(hbtn);
     }
     window.robo_images = robo_images;
@@ -484,15 +294,26 @@ pub unsafe extern "system" fn window_proc(hwindow: HWND, msg: UINT, wparam: WPAR
             (window.robo_buttons.contains(&(*pnm).hwndFrom) ||
              window.item_buttons.contains(&(*pnm).hwndFrom))
         {
-            return custom_button_draw(&window, (*pnm).hwndFrom, std::mem::transmute::<_,LPNMCUSTOMDRAW>(lparam));
+            return custom_button_draw(&window, (*pnm).hwndFrom, lparam as LPNMCUSTOMDRAW);
         }
 
     } else if msg == WM_CONTEXTMENU {
         let menu = CreatePopupMenu();
-        InsertMenuW(menu, -1i32 as u32, MF_BYPOSITION | MF_STRING | MF_ENABLED, ContextMenu::Reset as usize, as_wstr("Reset").as_ptr());
-        InsertMenuW(menu, -1i32 as u32, MF_BYPOSITION | MF_SEPARATOR, 0, null_mut());
-        InsertMenuW(menu, -1i32 as u32, MF_BYPOSITION | MF_STRING | MF_ENABLED, ContextMenu::Exit as usize, as_wstr("Exit").as_ptr());
-        let selection = TrackPopupMenu(menu, TPM_RETURNCMD | TPM_TOPALIGN | TPM_LEFTALIGN, GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam), 0, hwindow, null_mut());
+        InsertMenuW(menu, -1i32 as u32, MF_BYPOSITION | MF_STRING | MF_ENABLED,
+                    ContextMenu::Reset as usize, as_wstr("Reset").as_ptr());
+        InsertMenuW(menu, -1i32 as u32, MF_BYPOSITION | MF_SEPARATOR,
+                    0, null_mut());
+        InsertMenuW(menu, -1i32 as u32, MF_BYPOSITION | MF_STRING | MF_ENABLED,
+                    ContextMenu::Exit as usize, as_wstr("Exit").as_ptr());
+        let selection = TrackPopupMenu(
+            menu,
+            TPM_RETURNCMD | TPM_TOPALIGN | TPM_LEFTALIGN,
+            GET_X_LPARAM(lparam),
+            GET_Y_LPARAM(lparam),
+            0,
+            hwindow,
+            null_mut()
+        );
         if selection == ContextMenu::Exit as BOOL {
             PostQuitMessage(0);
         } else if selection == ContextMenu::Reset as BOOL {
@@ -510,12 +331,8 @@ pub unsafe extern "system" fn window_proc(hwindow: HWND, msg: UINT, wparam: WPAR
 
 fn custom_button_draw(window: &Window, hwnd: HWND, nmc: LPNMCUSTOMDRAW) -> LRESULT
 {
-    use std::ptr::null_mut;
     use winapi::shared::windef::{
         RECT,
-        HICON,
-        HBITMAP,
-        HBRUSH,
         HGDIOBJ,
     };
     use winapi::um::commctrl::{
@@ -523,17 +340,12 @@ fn custom_button_draw(window: &Window, hwnd: HWND, nmc: LPNMCUSTOMDRAW) -> LRESU
         CDRF_SKIPDEFAULT,
     };
     use winapi::um::winuser::{
-        DrawIconEx,
         FillRect,
         GetClientRect,
         SendMessageW,
-        BM_GETIMAGE,
         BM_GETCHECK,
-        IMAGE_ICON,
-        IMAGE_BITMAP,
         BST_CHECKED,
     };
-    use winapi::um::uxtheme::DrawThemeParentBackground;
     use winapi::um::wingdi::{
         CreatePatternBrush,
         DeleteObject,
@@ -542,9 +354,6 @@ fn custom_button_draw(window: &Window, hwnd: HWND, nmc: LPNMCUSTOMDRAW) -> LRESU
         if (*nmc).dwDrawStage == CDDS_PREERASE {
             let mut rc = RECT {top: 0, left: 0, right: 0, bottom: 0};
             GetClientRect(hwnd, &mut rc);
-            DrawThemeParentBackground(hwnd, (*nmc).hdc, &rc);
-            //let hbitmap = std::mem::transmute::<_,HBITMAP>(SendMessageW(hwnd, BM_GETIMAGE, IMAGE_BITMAP as usize, 0));
-            //DrawIconEx((*nmc).hdc, 0, 0, hicon, rc.right, rc.bottom, 0, null_mut(), 0x03 /*DI_NORMAL*/);
             // Now check if it's checked
             let status = SendMessageW(hwnd, BM_GETCHECK, 0, 0) as usize;
             let collections = if window.robo_buttons.contains(&hwnd) {
@@ -559,10 +368,7 @@ fn custom_button_draw(window: &Window, hwnd: HWND, nmc: LPNMCUSTOMDRAW) -> LRESU
             let hbitmap = if status == BST_CHECKED { collections.1[pos].1 } else { collections.1[pos].0 };
             let hbrush = CreatePatternBrush(hbitmap);
             FillRect((*nmc).hdc, &rc, hbrush);
-            DeleteObject(std::mem::transmute::<HBRUSH,HGDIOBJ>(hbrush));
-            //let hbrush = CreatePatternBrush(std::mem::transmute::<HANDLE,HBITMAP>(window.xmark));
-            //FillRect((*nmc).hdc, &rc, hbrush);
-            //DeleteObject(std::mem::transmute::<HBRUSH,HGDIOBJ>(hbrush));
+            DeleteObject(hbrush as HGDIOBJ);
             return CDRF_SKIPDEFAULT;
         }
     }
@@ -580,7 +386,6 @@ fn handle_message(window: &mut Window) -> bool {
 
     unsafe {
         let mut message : MSG = mem::uninitialized();
-
 
         if GetMessageW(&mut message as *mut MSG, window.handle, 0, 0) > 0 {
             TranslateMessage(&message as *const MSG);
@@ -607,15 +412,6 @@ fn print_message(msg: &str) -> Result<i32, Error> {
 }
 
 fn main() {
-    use std::ptr::null_mut;
-    use winapi::um::combaseapi::{
-        CoInitializeEx,
-        CoUninitialize,
-    };
-    use winapi::um::objbase::{
-        COINIT_MULTITHREADED,
-    };
-    unsafe { CoInitializeEx(null_mut(), COINIT_MULTITHREADED); }
     let mut window = Window::new();
     initialize_window(&mut window, APP_NAME, APP_NAME).expect("Failed to create window");
     layout_window(&mut window).expect("Failed to layout window");
@@ -625,6 +421,4 @@ fn main() {
             break;
         }
     }
-    unsafe { CoUninitialize(); }
 }
-

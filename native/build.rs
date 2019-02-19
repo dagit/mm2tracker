@@ -1,9 +1,9 @@
 // build.rs
 
 use std::env;
-use std::fs::File;
+//use std::fs::File;
 use std::fs::copy;
-use std::io::Write;
+//use std::io::Write;
 use std::path::Path;
 
 fn main() {
