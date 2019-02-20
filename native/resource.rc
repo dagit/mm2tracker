@@ -22,6 +22,7 @@ VALUE "Translation", 0x0, 0x04b0
 }
 }
 1 24 "mm2tracker.exe.manifest"
+MM_ICON ICON "../assets/icon.ico"
 IMG_BUBBLEMAN   BITMAP "../assets/bubbleman-60.bmp";
 IMG_AIRMAN      BITMAP "../assets/airman-60.bmp";
 IMG_QUICKMAN    BITMAP "../assets/quickman-60.bmp";
