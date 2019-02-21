@@ -8,4 +8,6 @@ install:
   - cargo -vV
 
 build_script:
-  - cargo build
+  - cd native
+  - cargo build --release
+  - cargo test --release
