@@ -412,6 +412,8 @@ fn print_message(msg: &str) -> Result<i32, Error> {
 }
 
 fn main() {
+    // TODO: try to encode the ownership (and borrowing) of `window`
+    // between `main` and the windows api. See `CreateWindowExW`.
     let mut window = Window::new();
     initialize_window(&mut window, APP_NAME, APP_NAME).expect("Failed to create window");
     layout_window(&mut window).expect("Failed to layout window");
