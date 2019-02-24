@@ -22,5 +22,5 @@ steps:
     ./rustup-init.exe -y --default-toolchain stable --default-host x86_64-pc-windows-msvc
     rustc -vV
     cargo -vV
-  dislayName: 'Install Rust'
+  displayName: 'Install Rust'
   
