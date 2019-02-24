@@ -10,9 +10,6 @@ pool:
   vmImage: 'vs2017-win2016'
 
 steps:
-- script: echo %PATH%
-  displayName: 'Run a one-line script'
-
 - powershell: |
     [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
     iwr -outf rustup-init.exe https://win.rustup.rs
@@ -24,3 +21,9 @@ steps:
     rustc -vV
     cargo -vV
   displayName: 'Install Rust'
+- script: |
+  cd native
+  cargo build --release
+  cat ./target/release/build/mm2tracker-*/output
+  ls -l ./target/release/mm2tracker.exe
+- script: cargo test --release
