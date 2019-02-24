@@ -22,8 +22,8 @@ steps:
     cargo -vV
   displayName: 'Install Rust'
 - script: |
-  cd native
-  cargo build --release
-  cat ./target/release/build/mm2tracker-*/output
-  ls -l ./target/release/mm2tracker.exe
+    cd native
+    cargo build --release
+    cat ./target/release/build/mm2tracker-*/output
+    ls -l ./target/release/mm2tracker.exe
 - script: cargo test --release
