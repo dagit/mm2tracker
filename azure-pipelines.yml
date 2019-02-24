@@ -28,7 +28,39 @@ steps:
     cargo build --release
     cat ./target/release/build/mm2tracker-*/output
     ls -l ./target/release/mm2tracker.exe
+    copy ./target/release/mm2tracker.exe ../mm2tracker.exe
+  displayName: 'Build mm2tracker.exe'
 - script: |
     PATH=%PATH%;%USERPROFILE%\\.cargo\\bin
     cd native
     cargo test --release
+  displayName: 'Test mm2tracker.exe'
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: index.html
+    archiveType: 'zip'
+    archiveFile: mm2tracker.zip
+    replaceExistingArchive: true
+    verbose: true
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: assets/*60.png
+    archiveType: 'zip'
+    archiveFile: mm2tracker.zip
+    replaceExistingArchive: false
+    verbose: true
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: assets/item*20*.png
+    archiveType: 'zip'
+    archiveFile: mm2tracker.zip
+    replaceExistingArchive: false
+    verbose: true
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: mm2tracker.exe
+    archiveType: 'zip'
+    archiveFile: mm2tracker.zip
+    replaceExistingArchive: false
+    verbose: true
+
