@@ -16,8 +16,11 @@ steps:
 - powershell: |
     [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
     iwr -outf rustup-init.exe https://win.rustup.rs
-    ./rustup-init.exe -y --default-toolchain stable --default-host x86_64-pc-windows-msvc 2>&1 | %{ "$_" }
     $env:PATH = "$env:PATH;${env:USERPROFILE}\.cargo\bin"
+  displayName: 'Download Rust'
+- script: |
+    ./rustup-init.exe -y --default-toolchain stable --default-host x86_64-pc-windows-msvc 2>&1 | %{ "$_" }
     rustc -vV
     cargo -vV
-  displayName: 'Install rust'
+  dislayName: 'Install Rust'
+  
