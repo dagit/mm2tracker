@@ -19,7 +19,7 @@ steps:
     $env:PATH = "$env:PATH;${env:USERPROFILE}\.cargo\bin"
   displayName: 'Download Rust'
 - script: |
-    ./rustup-init.exe -y --default-toolchain stable --default-host x86_64-pc-windows-msvc 2>&1 | %{ "$_" }
+    ./rustup-init.exe -y --default-toolchain stable --default-host x86_64-pc-windows-msvc
     rustc -vV
     cargo -vV
   dislayName: 'Install Rust'
