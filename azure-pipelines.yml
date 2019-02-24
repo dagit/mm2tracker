@@ -13,7 +13,7 @@ variables:
   PATH: '%PATH%;%USERPROFILE%\\.cargo\\bin'
 
 steps:
-- script: echo Hello, world!
+- script: echo %PATH%
   displayName: 'Run a one-line script'
 
 - powershell: |
@@ -21,9 +21,8 @@ steps:
     iwr -outf rustup-init.exe https://win.rustup.rs
   displayName: 'Download Rust'
 - script: |
-    ./rustup-init.exe -y --default-toolchain stable --default-host x86_64-pc-windows-msvc
+    rustup-init.exe -y --default-toolchain stable --default-host x86_64-pc-windows-msvc
     echo %PATH%
     rustc -vV
     cargo -vV
   displayName: 'Install Rust'
-  
