@@ -6,8 +6,8 @@
 pool:
   vmImage: 'vs2017-win2016'
 
-#variables:
-#  PATH: $(PATH);$(USERPROFILE)\.cargo\bin
+variables:
+  PATH: $(PATH);$(USERPROFILE)\.cargo\bin
 
 steps:
 - powershell: |
@@ -38,7 +38,8 @@ steps:
   displayName: 'Test mm2tracker.exe'
 - script: |
     7z a mm2tracker.zip %BUILD_SOURCESDIRECTORY%/native/target/release/mm2tracker.exe index.html assets/*-60.png assets/item*20*.png
+  displayName: 'Create mm2tracker.zip'
 - task: PublishBuildArtifacts@1
   inputs:
     pathtoPublish: mm2tracker.zip
-    artifactName: mm2tracker.zip
+    artifactName: drop
