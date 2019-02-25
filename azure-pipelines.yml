@@ -38,4 +38,4 @@ steps:
 - task: PublishBuildArtifacts@1
   inputs:
     pathtoPublish: mm2tracker.zip
-    artifactName: drop
+    artifactName: mm2tracker.zip
