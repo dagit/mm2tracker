@@ -3,12 +3,11 @@
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
 
-trigger:
-- master
-- azure-pipelines
-
 pool:
   vmImage: 'vs2017-win2016'
+
+#variables:
+#  PATH: $(PATH);$(USERPROFILE)\.cargo\bin
 
 steps:
 - powershell: |
@@ -37,36 +36,8 @@ steps:
     cd native
     cargo test --release
   displayName: 'Test mm2tracker.exe'
-- task: ArchiveFiles@2
-  inputs:
-    rootFolderOrFile: index.html
-    archiveType: 'zip'
-    archiveFile: mm2tracker.zip
-    replaceExistingArchive: true
-    verbose: true
-- task: ArchiveFiles@2
-  inputs:
-    rootFolderOrFile: assets/*60.png
-    archiveType: 'zip'
-    includeRootFolder: true
-    archiveFile: mm2tracker.zip
-    replaceExistingArchive: false
-    verbose: true
-- task: ArchiveFiles@2
-  inputs:
-    rootFolderOrFile: assets/item*20*.png
-    archiveType: 'zip'
-    includeRootFolder: true
-    archiveFile: mm2tracker.zip
-    replaceExistingArchive: false
-    verbose: true
-- task: ArchiveFiles@2
-  inputs:
-    rootFolderOrFile: mm2tracker.exe
-    archiveType: 'zip'
-    archiveFile: mm2tracker.zip
-    replaceExistingArchive: false
-    verbose: true
+- script: |
+    7z a mm2tracker.zip %BUILD_SOURCESDIRECTORY%/native/target/release/mm2tracker.exe index.html assets/*-60.png assets/item*20*.png
 - task: PublishBuildArtifacts@1
   inputs:
     pathtoPublish: mm2tracker.zip
