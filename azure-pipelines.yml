@@ -65,4 +65,7 @@ steps:
     archiveFile: mm2tracker.zip
     replaceExistingArchive: false
     verbose: true
-
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathtoPublish: mm2tracker.zip
+    artifactName: mm2tracker.zip
