@@ -48,6 +48,7 @@ steps:
   inputs:
     rootFolderOrFile: assets/*60.png
     archiveType: 'zip'
+    includeRootFolder: true
     archiveFile: mm2tracker.zip
     replaceExistingArchive: false
     verbose: true
@@ -55,6 +56,7 @@ steps:
   inputs:
     rootFolderOrFile: assets/item*20*.png
     archiveType: 'zip'
+    includeRootFolder: true
     archiveFile: mm2tracker.zip
     replaceExistingArchive: false
     verbose: true
