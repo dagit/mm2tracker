@@ -1,26 +1,41 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
+# mm2tracker windows build pipeline
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
-
-trigger:
-- master
 
 pool:
   vmImage: 'vs2017-win2016'
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
-
 - powershell: |
     [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
     iwr -outf rustup-init.exe https://win.rustup.rs
-    $env:PATH = "$env:PATH;${env:USERPROFILE}\.cargo\bin"
   displayName: 'Download Rust'
 - script: |
-    ./rustup-init.exe -y --default-toolchain stable --default-host x86_64-pc-windows-msvc
+    PATH=%PATH%;%USERPROFILE%\\.cargo\\bin
+    rustup-init.exe -y --default-toolchain stable --default-host x86_64-pc-windows-msvc
+    echo %PATH%
     rustc -vV
     cargo -vV
-  dislayName: 'Install Rust'
-  
+  displayName: 'Install Rust'
+- script: |
+    PATH=%PATH%;%USERPROFILE%\\.cargo\\bin
+    cd native
+    cargo build --release
+    cat ./target/release/build/mm2tracker-*/output
+    ls -l ./target/release/mm2tracker.exe
+  displayName: 'Build mm2tracker.exe'
+- powershell: |
+    cp native/target/release/mm2tracker.exe mm2tracker.exe
+  displayName: 'Copy mm2tracker.exe'
+- script: |
+    PATH=%PATH%;%USERPROFILE%\\.cargo\\bin
+    cd native
+    cargo test --release
+  displayName: 'Test mm2tracker.exe'
+- script: |
+    7z a mm2tracker.zip %BUILD_SOURCESDIRECTORY%/native/target/release/mm2tracker.exe index.html assets/*-60.png assets/item*20*.png
+  displayName: 'Create mm2tracker.zip'
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathtoPublish: mm2tracker.zip
+    artifactName: mm2tracker.zip
