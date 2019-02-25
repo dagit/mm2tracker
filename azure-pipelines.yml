@@ -28,8 +28,10 @@ steps:
     cargo build --release
     cat ./target/release/build/mm2tracker-*/output
     ls -l ./target/release/mm2tracker.exe
-    copy ./target/release/mm2tracker.exe ../mm2tracker.exe
   displayName: 'Build mm2tracker.exe'
+- powershell: |
+    cp native/target/release/mm2tracker.exe mm2tracker.exe
+  displayName: 'Copy mm2tracker.exe'
 - script: |
     PATH=%PATH%;%USERPROFILE%\\.cargo\\bin
     cd native
