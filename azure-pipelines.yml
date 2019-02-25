@@ -1,13 +1,9 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
+# mm2tracker windows build pipeline
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
 
 pool:
   vmImage: 'vs2017-win2016'
-
-variables:
-  PATH: $(PATH);$(USERPROFILE)\.cargo\bin
 
 steps:
 - powershell: |
