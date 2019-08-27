@@ -5,11 +5,19 @@ man 2. In particular, I created this for displaying progress during a
 randomized play through of the game. To randomize your mm2 ROM, take a look at
 [Mega Man 2 Randomizer by Duckfist](https://github.com/duckfist/MM2Random).
 
-# Usage
+There are two versions of the tracker in this repository with the same feature set. There is a native win32 binary and an HTML + JavaScript version. I'm not sure what is the minimum version of windows required for the native app. It works for me in windows 10. I'm using some of the newer win32 apis so you need at least windows 7, but you might need windows 8 or newer.
+
+The web version should work in most browers.
+
+# Windows app
+
+Look at the releases tab on GitHub for the latest release. Currently the zip file has both the native and browser versions of the tracker. Run `mm2tracker.exe` and a window should appear. Click on an image to toggle it. There is also a right-click menu to reset the tracker state.
+
+# Browser app
 
 The easiest way to use the tracker is to visit the [version I
-host](https://files.codersbase.com/mm2tracker). Since the tracker is currently
-just a single html file and a set of images, you can also run the tracker by
+host](https://files.codersbase.com/mm2tracker). This version of tracker is currently
+just a single html file and a set of images. Therefore, you can also run the tracker by
 cloning this repository and pointing your browser at the index.html file.
 
 If you are streaming and want to display the tracker using OBS there are two
@@ -22,24 +30,19 @@ use the tracker. Note: The tracker's background is set to transparent. If you
 capture it using a browser source this transparency will work correctly but if
 you capture the browser window instead, you may get a black background instead.
 
+# Usage
+
 All the images displayed by the tracker can be toggled by clicking on them.
 Initially you will see the 8 robot masters and three items to the right.
 Clicking on a robot master portrait will place a red X on that robot master.
 Clicking an item will toggle it from black and white to the normal colors
-(white and red). To reset the interface, either toggle each image or refresh
-the browser page.
+(white and red). To reset the interface, either toggle each image, refresh
+the browser page, or right-click and choose reset.
 
 I usually check off robot masters by stage. For example, if you visit Airman on
 the stage select menu and defeat Metal Man, I would still check off Airman in
 the tracker because that is the stage I completed. Of course, how you use the
 tracker is entirely up to your personal perferences.
-
-# Future Work
-
-In the future I would like to make a native app version. This is primarily
-because I'm not fond of the way the OBS browser source interaction works. This
-is a low-priority hobby project for me so I can't really give a good estimate
-when/if that native version will land.
 
 # Issues & Suggestions
 
